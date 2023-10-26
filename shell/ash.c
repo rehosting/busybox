@@ -9390,6 +9390,9 @@ evaltree(union node *n, int flags)
 		goto setstatus;
 	}
 	case NIF:
+		if(n->nif.test->type == NCMD) {
+			printf("if lineno = %i\n", n->nif.test->ncmd.linno);
+		}
 		status = evaltree(n->nif.test, EV_TESTED);
 		if (evalskip)
 			break;
@@ -10344,6 +10347,8 @@ evalcommand(union node *cmd, int flags)
 
 	errlinno = lineno = cmd->ncmd.linno;
 
+	printf("lineno = %li\n", lineno);
+
 	/* First expand the arguments. */
 	TRACE(("evalcommand(0x%lx, %d) called\n", (long)cmd, flags));
 #if BASH_PROCESS_SUBST
@@ -10398,11 +10403,32 @@ evalcommand(union node *cmd, int flags)
 				break;
 		}
 
-		for (; argp; argp = argp->narg.next)
+		const char *cmd_str = arglist.list->text;
+		printf("cmd = %s\n", cmd_str);
+
+		int current_argc = 1;
+		for (; argp; argp = argp->narg.next) {
 			expandarg(argp, &arglist,
 					pseudovarflag &&
 					isassignment(argp->narg.text) ?
 					EXP_VARTILDE : EXP_FULL | EXP_TILDE);
+
+			printf("  - %s (", argp->narg.text);
+			int len = strlen(argp->narg.text);
+			for(int j = 0; j < len; j++) {
+				printf("%02X ", argp->narg.text[j]);
+			}
+			printf(")\n");
+
+			int i = 0;
+			for (sp = arglist.list; sp; sp = sp->next, i++) {
+				if(i >= current_argc) {
+					printf("  * %s\n", sp->text);
+					current_argc++;
+				}
+			}
+
+		}
 
 		for (sp = arglist.list; sp; sp = sp->next)
 			argc++;
