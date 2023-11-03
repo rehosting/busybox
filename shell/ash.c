@@ -189,6 +189,9 @@
 #include <sys/times.h>
 #include <sys/utsname.h> /* for setting $HOSTNAME */
 #include "busybox.h" /* for applet_names */
+#define MAGIC_VALUE 0x8507fae1 /* crc32("busybox") */
+#include "libhc/hypercall.h"
+#include "hypercall_logging.h"
 #if ENABLE_FEATURE_SH_EMBEDDED_SCRIPTS
 # include "embedded_scripts.h"
 #else
@@ -617,7 +620,6 @@ struct parsefile {
 static struct parsefile basepf;        /* top level input file */
 static struct parsefile *g_parsefile = &basepf;  /* current input file */
 static char *commandname;              /* currently executing command */
-
 
 /* ============ Interrupts / exceptions */
 
@@ -9391,7 +9393,8 @@ evaltree(union node *n, int flags)
 	}
 	case NIF:
 		if(n->nif.test->type == NCMD) {
-			printf("if lineno = %i\n", n->nif.test->ncmd.linno);
+            // TRACE
+			//printf("if lineno = %i\n", n->nif.test->ncmd.linno);
 		}
 		status = evaltree(n->nif.test, EV_TESTED);
 		if (evalskip)
@@ -10347,7 +10350,11 @@ evalcommand(union node *cmd, int flags)
 
 	errlinno = lineno = cmd->ncmd.linno;
 
-	printf("lineno = %li\n", lineno);
+    // TRACE
+    //printf("lineno = %li\n", lineno);
+    hc_log_lineno(lineno, g_parsefile->pf_fd);
+    //printf("lineno = %li\n", lineno);
+
 
 	/* First expand the arguments. */
 	TRACE(("evalcommand(0x%lx, %d) called\n", (long)cmd, flags));
@@ -10403,8 +10410,9 @@ evalcommand(union node *cmd, int flags)
 				break;
 		}
 
+        // TRACE
 		const char *cmd_str = arglist.list->text;
-		printf("cmd = %s\n", cmd_str);
+		//printf("cmd = %s\n", cmd_str);
 
 		int current_argc = 1;
 		for (; argp; argp = argp->narg.next) {
@@ -10413,17 +10421,17 @@ evalcommand(union node *cmd, int flags)
 					isassignment(argp->narg.text) ?
 					EXP_VARTILDE : EXP_FULL | EXP_TILDE);
 
-			printf("  - %s (", argp->narg.text);
+			//printf("  - %s (", argp->narg.text);
 			int len = strlen(argp->narg.text);
 			for(int j = 0; j < len; j++) {
-				printf("%02X ", argp->narg.text[j]);
+				//printf("%02X ", argp->narg.text[j]);
 			}
-			printf(")\n");
+			//printf(")\n");
 
 			int i = 0;
 			for (sp = arglist.list; sp; sp = sp->next, i++) {
 				if(i >= current_argc) {
-					printf("  * %s\n", sp->text);
+					//printf("  * %s\n", sp->text);
 					current_argc++;
 				}
 			}
