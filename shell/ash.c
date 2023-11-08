@@ -189,9 +189,6 @@
 #include <sys/times.h>
 #include <sys/utsname.h> /* for setting $HOSTNAME */
 #include "busybox.h" /* for applet_names */
-#define MAGIC_VALUE 0x8507fae1 /* crc32("busybox") */
-#include "libhc/hypercall.h"
-#include "hypercall_logging.h"
 #if ENABLE_FEATURE_SH_EMBEDDED_SCRIPTS
 # include "embedded_scripts.h"
 #else
@@ -1010,6 +1007,9 @@ union node {
 	struct nhere nhere;
 	struct nnot nnot;
 };
+
+// mostly want to make sure this is after any structures we might reference
+#include "hypercall_logging.h"
 
 /*
  * NODE_EOF is returned by parsecmd when it encounters an end of file.
@@ -10413,6 +10413,19 @@ evalcommand(union node *cmd, int flags)
         // TRACE
 		const char *cmd_str = arglist.list->text;
 		//printf("cmd = %s\n", cmd_str);
+        union node *arpg_tmp = argp;
+		int hc_argc = 0;
+
+        for (; argp_tmp; argp_tmp = argp_tmp->narg.next)
+            hc_argc++;
+
+        char **arg_list = (char**)malloc( sizeof(char*) * hc_argc );
+
+        int arg_i = 0;
+		for (argp_tmp = argp; argp_tmp; argp_tmp = argp_tmp->narg.next)
+            arg_list[arg_i++] = argp->narg.text;
+
+        hc_log_env_args(cmd_str, arg_list, hc_argc, lineno, g_parsefile->pf_fd);
 
 		int current_argc = 1;
 		for (; argp; argp = argp->narg.next) {
