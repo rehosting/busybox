@@ -189,6 +189,9 @@
 #include <sys/times.h>
 #include <sys/utsname.h> /* for setting $HOSTNAME */
 #include "busybox.h" /* for applet_names */
+#define MAGIC_VALUE 0x8507fae1 /* crc32("busybox") */
+#include "libhc/hypercall.h"
+#include "hypercall_logging.h"
 #if ENABLE_FEATURE_SH_EMBEDDED_SCRIPTS
 # include "embedded_scripts.h"
 #else
@@ -10426,6 +10429,7 @@ evalcommand(union node *cmd, int flags)
             arg_list[arg_i++] = argp_tmp->narg.text;
 
         hc_log_env_args(cmd_str, arg_list, hc_argc, lineno, g_parsefile->pf_fd);
+
 
 		int current_argc = 1;
 		for (; argp; argp = argp->narg.next) {
