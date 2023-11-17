@@ -12,7 +12,9 @@ typedef enum {
 } hypercall_cmd;
 
 // log that a given line number is about to execute in a given file
-void hc_log_lineno(int lineno, int fd) {
+void hc_log_lineno(int linenum, int fd) {
+    int pid = getpid();
+
     // something like /proc/self/fd/[fd]. we want to do an fd -> path lookup.
     char proc_symlink_path[32] = { 0 };
 
@@ -29,7 +31,7 @@ void hc_log_lineno(int lineno, int fd) {
     } else {
         if(snprintf(proc_symlink_path, sizeof proc_symlink_path, "/proc/self/fd/%i", fd) > 11) {
             if(realpath(proc_symlink_path, current_file) != NULL) {
-                file_str = &current_file;
+                file_str = (char*)&current_file;
             } else {
                 file_str = "[broken /proc/self/fd symlink]";
             }
@@ -39,11 +41,9 @@ void hc_log_lineno(int lineno, int fd) {
         }
     }
 
-    int pid = getpid();
-
     void *hypercall_args[3] = {
         /* file */   (void*)file_str,
-        /* lineno */ (void*)&lineno,
+        /* lineno */ (void*)&linenum,
         //                  ^ workaround since libhc dereferences all arguments blindly
         /* pid */    (void*)&pid,
     };
@@ -56,7 +56,7 @@ int index_of(const char *str, char c) {
     const char *found = strchr(str, c);
 
     if(found == NULL)
-        reutrn -1;
+        return -1;
     else
         return (int)(found - str);
 }
@@ -84,70 +84,8 @@ int var_len(const char *start) {
     return min_not_neg_1(index_of(start, '='), index_of(start, CTLENDVAR), len);
 }
 
-void hc_log_env_args(const char *cmd, const char **argv, int argc, int lineno, int fd) {
-    int envs_count = 0;
-    int envs_capacity = argc;
-
-    // known issue: unchecked {c,re}alloc return values throughout the function
-    char **envs = (char**)calloc(sizeof(char*), argc);
-    char **env_vals = (char**)calloc(sizeof(char*), argc);
-
-    for(int i = 0; i < argc; i++) {
-        // The beauty of not controlling the contents of argv
-        if(argv[i] == NULL)
-            continue;
-
-        const char *arg = argv[i];
-        int len = strlen(arg);
-
-        // nothing has every gone wrong manually parsing strings
-        for(int j = 0; j < len; j++) {
-
-            switch(arg[j]) {
-                CTLESC: {
-                    // skip next character as it has been escaped
-                    j++;
-                    continue;
-                }
-                
-                CTLVAR: {
-                    // a variable to be expanded is found
-                    
-
-                    // make sure we're still within the string
-                    if(j + 2 >= len) {
-                        break;
-                    }
-
-                    char *var_start = &arg[j+2];
-
-                    // known issue: won't respect escaped control characters nested inside the variable name (if this is valid bash it deserves to break)
-                    int varlen = var_len(var_start);
-
-                    char *var_name = strndup(var_start, var_len);
-                    char *var_val = lookupvar(var_name);
-
-                    envs[envs_count] = var_name;
-                    env_vals[envs_count] = var_val;
-
-                    if(envs_count == envs_capacity) {
-                        envs_capacity *= 2;
-                        envs = realloc(envs, envs_capacity * sizeof(char*));
-                        env_vals = realloc(env_vals, envs_capacity * sizeof(char*));
-                    }
-
-                    j += var_len;
-                }
-
-                default:
-                    continue
-            }
-        }
-    }
-
-    for(int i = 0; i < env_vals; i++) {
-        printf("    (%i) env %s = %s", lineno, envs[i], env_vals[i]);
-    }
+void hc_log_env_args(const char *cmd, const char **argv, int argc, int linenum, int fd) {
+    int pid = getpid();
 
     // something like /proc/self/fd/[fd]. we want to do an fd -> path lookup.
     char proc_symlink_path[32] = { 0 };
@@ -165,7 +103,7 @@ void hc_log_env_args(const char *cmd, const char **argv, int argc, int lineno, i
     } else {
         if(snprintf(proc_symlink_path, sizeof proc_symlink_path, "/proc/self/fd/%i", fd) > 11) {
             if(realpath(proc_symlink_path, current_file) != NULL) {
-                file_str = &current_file;
+                file_str = (char*)&current_file;
             } else {
                 file_str = "[broken /proc/self/fd symlink]";
             }
@@ -175,18 +113,81 @@ void hc_log_env_args(const char *cmd, const char **argv, int argc, int lineno, i
         }
     }
 
-    int pid = getpid();
+    int envs_count = 0;
+    int envs_capacity = argc;
+
+    // known issue: unchecked {c,re}alloc return values throughout the function
+    char **envs = (char**)calloc(sizeof(char*), argc);
+    const char **env_vals = (const char**)calloc(sizeof(char*), argc);
+
+    for(int i = 0; i < argc; i++) {
+        // The beauty of not controlling the contents of argv
+        if(argv[i] == NULL)
+            continue;
+
+        const char *arg = argv[i];
+        int len = strlen(arg);
+
+        // nothing has every gone wrong manually parsing strings
+        for(int j = 0; j < len; j++) {
+
+            switch((unsigned char)arg[j]) {
+                case CTLESC: {
+                    // skip next character as it has been escaped
+                    j++;
+                    continue;
+                }
+                
+                case CTLVAR: {
+                    // a variable to be expanded is found
+
+                    // make sure we're still within the string
+                    if(j + 2 > len) {
+                        break;
+                    }
+
+                    const char *var_start = &arg[j+2];
+
+                    // known issue: won't respect escaped control characters nested inside the variable name (if this is valid bash it deserves to break)
+                    int varlen = var_len(var_start);
+
+                    char *var_name = strndup(var_start, varlen);
+                    const char *var_val = lookupvar(var_name);
+
+                    envs[envs_count] = var_name;
+                    env_vals[envs_count] = var_val;
+
+                    envs_count++;
+
+                    if(envs_count == envs_capacity) {
+                        envs_capacity *= 2;
+                        envs = realloc(envs, envs_capacity * sizeof(char*));
+                        env_vals = realloc(env_vals, envs_capacity * sizeof(char*));
+                    }
+
+                    j += varlen;
+                }
+
+                default:
+                    continue;
+            }
+        }
+    }
+
+    if(envs_count == 0) {
+        return;
+    }
 
     void *hypercall_args[6] = {
         /* file */      (void*)file_str,
-        /* lineno */    (void*)&lineno,
+        /* lineno */    (void*)&linenum,
         //                     ^ workaround since libhc dereferences all arguments blindly
         /* pid */       (void*)&pid,
         /* envs */      (void*)envs,
         /* env_vals */  (void*)env_vals, // env_vals[i] == NULL if variable lookup fails
         /* envs_count*/ (void*)&envs_count,
     };
-
+    
     hc(HC_CMD_LOG_ENV_ARGS, hypercall_args, 6);
 
     // free `envs` recursively and `env_vals` non-recursively
