@@ -7,6 +7,8 @@ TARGETPREFIXLIST=(x86_64-linux-gnu mipseb-linux-musl mipsel-linux-musl arm-linux
 TARGETNAMELIST=(  x86_64           mips              mips              arm                aarch64            mips64              mips64             )
 TARGETFLAGSLIST=( ""               -mips32r3         -mips32r3         ""                 ""                 -mips64r2           -mips64r2)
 
+mkdir -p $OUTDIR
+
 for i in "${!TARGETNAMELIST[@]}"; do
     if [[ "${TARGETPREFIXLIST[i]}" == "mips64eb-linux-musl" ]]
     then
