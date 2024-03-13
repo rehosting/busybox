@@ -1,4 +1,4 @@
-name: Compile and Publish Console
+name: Compile and Publish Busybox
 
 on:
   push:
@@ -57,7 +57,7 @@ jobs:
           asset_path: ./busybox-latest.tar.gz
           asset_name: busybox-latest.tar.gz
           asset_content_type: application/gzip
-          
+
       - name: Publish release
         uses: StuYarrow/publish-release@v1.1.2
         env:
