@@ -12370,7 +12370,7 @@ parse_command(void)
 		t = TRP;
 		break;
 	case TBEGIN:
-		n1 = list(0);
+		n1 = list(2);
 		t = TEND;
 		break;
 	IF_BASH_FUNCTION(case TFUNCTION:)
