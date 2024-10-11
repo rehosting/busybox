@@ -356,6 +356,11 @@ void hc_log_file_type_check(const char *file, int line, int pid, const char *pat
 }
 
 void hc_log_if_cond(const struct ncmd *cond, int status) {
+    // if the condition is not actually a command there's no analysis to be done
+    if(cond->args == NULL) {
+        return;
+    }
+
     int fd = g_parsefile->pf_fd;
     int pid = getpid();
 
