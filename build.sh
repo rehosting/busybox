@@ -22,8 +22,9 @@ for i in "${!TARGETNAMELIST[@]}"; do
     make ARCH=${TARGETNAMELIST[i]} CROSS_COMPILE=${TARGETPREFIXLIST[i]}- CFLAGS="${TARGETFLAGSLIST[i]}" SKIP_STRIP="${SKIP_STRIP}"
 
     # copy the unstripped version if the stripped version doesn't exist
-    mv busybox $OUTDIR/busybox.${TARGETPREFIXLIST[i]} \
-        || mv busybox_unstripped $OUTDIR/busybox.${TARGETPREFIXLIST[i]}
+    mkdir -p $OUTDIR/${TARGETNAMELIST[i]}
+    mv busybox $OUTDIR/${TARGETNAMELIST[i]}/busybox \
+        || mv busybox_unstripped $OUTDIR/${TARGETNAMELIST[i]}/busybox
 
     # busybox doesn't have any way to configure build artifact location,
     # so we need to clean up when we're done in case the next arch's build

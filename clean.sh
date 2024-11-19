@@ -2,4 +2,4 @@
 OUTDIR=build
 
 make clean
-rm -f $OUTDIR/*
+rm -rf $OUTDIR/*
