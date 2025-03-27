@@ -3,9 +3,9 @@ set -eux
 
 OUTDIR=build
 
-TARGETPREFIXLIST=(x86_64-linux-musl mipseb-linux-musl mipsel-linux-musl arm-linux-musleabi aarch64-linux-musl mips64eb-linux-musl mips64el-linux-musl)
-TARGETNAMELIST=(  x86_64            mipseb              mipsel              armel                aarch64            mips64eb              mips64el)
-TARGETFLAGSLIST=( ""                -mips32r3         -mips32r3         ""                 ""                 -mips64r2           -mips64r2)
+TARGETPREFIXLIST=(x86_64-linux-musl mipseb-linux-musl mipsel-linux-musl arm-linux-musleabi aarch64-linux-musl mips64eb-linux-musl mips64el-linux-musl  riscv64-linux-musl  powerpc-linux-musl powerpcle-linux-musl powerpc64-linux-musl powerpc64le-linux-musl loongarch64-unknown-linux-gnu)
+TARGETNAMELIST=(  x86_64            mipseb              mipsel              armel                aarch64            mips64eb              mips64el                riscv64             powerpc            powerpcle            powerpc64            powerpc64le            loongarch64)
+TARGETFLAGSLIST=( ""                -mips32r3         -mips32r3         ""                 ""                 -mips64r2           -mips64r2          ""                             ""                 -m32                 -m64                 -m64                  "")
 
 mkdir -p $OUTDIR
 
@@ -19,7 +19,7 @@ for i in "${!TARGETNAMELIST[@]}"; do
 
     SKIP_STRIP=y
 
-    make ARCH=${TARGETNAMELIST[i]} CROSS_COMPILE=${TARGETPREFIXLIST[i]}- CFLAGS="${TARGETFLAGSLIST[i]}" SKIP_STRIP="${SKIP_STRIP}"
+    make -j`nproc` ARCH=${TARGETNAMELIST[i]} CROSS_COMPILE=${TARGETPREFIXLIST[i]}- CFLAGS="${TARGETFLAGSLIST[i]}" SKIP_STRIP="${SKIP_STRIP}"
 
     # copy the unstripped version if the stripped version doesn't exist
     mkdir -p $OUTDIR/${TARGETNAMELIST[i]}
