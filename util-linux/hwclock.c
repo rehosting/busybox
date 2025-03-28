@@ -131,7 +131,7 @@ static void show_clock(const char **pp_rtcname, int utc)
 
 static void set_kernel_tz(const struct timezone *tz)
 {
-#if LIBC_IS_MUSL
+#if LIBC_IS_MUSL && !(defined(__riscv) && __riscv_xlen == 32)
 	/* musl libc does not pass tz argument to syscall
 	 * because "it's deprecated by POSIX, therefore it's fine
 	 * if we gratuitously break stuff" :(
