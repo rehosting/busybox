@@ -3,9 +3,9 @@ set -eux
 
 OUTDIR=build
 
-TARGETPREFIXLIST=(x86_64-linux-musl mipseb-linux-musl mipsel-linux-musl arm-linux-musleabi aarch64-linux-musl mips64eb-linux-musl mips64el-linux-musl  riscv64-linux-musl  powerpc-linux-musl powerpcle-linux-musl powerpc64-linux-musl powerpc64le-linux-musl loongarch64-unknown-linux-gnu)
-TARGETNAMELIST=(  x86_64            mipseb              mipsel              armel                aarch64            mips64eb              mips64el                riscv64             powerpc            powerpcle            powerpc64            powerpc64le            loongarch64)
-TARGETFLAGSLIST=( ""                -mips32r3         -mips32r3         ""                 ""                 -mips64r2           -mips64r2          ""                             ""                 -m32                 -m64                 -m64                  "")
+TARGETPREFIXLIST=(x86_64-linux-musl mipseb-linux-musl mipsel-linux-musl arm-linux-musleabi aarch64-linux-musl mips64eb-linux-musl mips64el-linux-musl  riscv32-linux-musl riscv64-linux-musl  powerpc-linux-musl powerpcle-linux-musl powerpc64-linux-musl powerpc64le-linux-musl loongarch64-unknown-linux-gnu)
+TARGETNAMELIST=(  x86_64            mipseb              mipsel              armel                aarch64            mips64eb              mips64el                riscv32        riscv64             powerpc            powerpcle            powerpc64            powerpc64le            loongarch64)
+TARGETFLAGSLIST=( ""                -mips32r3         -mips32r3         ""                 ""                 -mips64r2           -mips64r2          ""                   ""          ""                 -m32                 -m64                 -m64                  "")
 
 mkdir -p $OUTDIR
 
