@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #define MAGIC_VALUE 0x8507fae1 /* crc32("busybox") */
-#include "libhc/hypercall.h"
+#include "portalcall.h"
 
 typedef enum {
     // log the line number of each command before it executes
@@ -127,7 +127,7 @@ void hc_log_lineno(int linenum, int fd) {
         /* pid */    (void*)&pid,
     };
 
-    hc(HC_CMD_LOG_LINENO, hypercall_args, 3);
+    portal_hc(HC_CMD_LOG_LINENO, hypercall_args, 3);
 }
 
 // returns -1 if `c` not found
@@ -267,7 +267,7 @@ void hc_log_env_args(const char *cmd, const char **argv, int argc, int linenum, 
         /* envs_count*/ (void*)&envs_count,
     };
     
-    hc(HC_CMD_LOG_ENV_ARGS, hypercall_args, 6);
+    portal_hc(HC_CMD_LOG_ENV_ARGS, hypercall_args, 6);
 
     // free `envs` recursively and `env_vals` non-recursively
     for(int i = 0; i < envs_count; i++)
@@ -324,7 +324,7 @@ void hc_log_check_if_env_exists(const char *file, int line, int pid, const char 
         /* status */ (void*)&status,
     };
 
-    hc(HC_CMD_LOG_CHECK_IF_ENV_EXISTS, hypercall_args, 5);
+    portal_hc(HC_CMD_LOG_CHECK_IF_ENV_EXISTS, hypercall_args, 5);
 }
 
 void hc_log_check_if_env_equals(const char *file, int line, int pid, const char *var, const char *value, int status, hypercall_cmd cmd) {
@@ -338,7 +338,7 @@ void hc_log_check_if_env_equals(const char *file, int line, int pid, const char 
         /* value */  (void*)value,
     };
 
-    hc(cmd, hypercall_args, 6);
+    portal_hc(cmd, hypercall_args, 6);
 }
 
 void hc_log_file_type_check(const char *file, int line, int pid, const char *path, hc_file_type file_type, int status) {
@@ -352,7 +352,7 @@ void hc_log_file_type_check(const char *file, int line, int pid, const char *pat
         /* file_type */  (void*)&file_type,
     };
 
-    hc(HC_CMD_LOG_FILE_CHECK, hypercall_args, 6);
+    portal_hc(HC_CMD_LOG_FILE_CHECK, hypercall_args, 6);
 }
 
 void hc_log_if_cond(const struct ncmd *cond, int status) {
