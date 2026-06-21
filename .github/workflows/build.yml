@@ -1,4 +1,9 @@
-name: Compile and Publish Busybox
+name: Tag and Publish release
+
+# busybox is no longer cross-built here -- penguin-tools builds it for every
+# guest arch from this source (github:rehosting/penguin-tools#busybox-*) and
+# ships it in penguin-tools.tar.gz. This workflow only cuts a versioned release
+# for tracking/provenance; it publishes no binary asset.
 
 on:
   push:
@@ -6,34 +11,20 @@ on:
       - master
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
       - name: Get next version
         uses: reecetech/version-increment@2023.10.1
         id: version
         with:
           use_api: true
 
-      - name: Build 
-        run: |
-          git submodule update --init
-          docker run --rm -v $PWD:/app -w /app ghcr.io/rehosting/embedded-toolchains:latest /app/build.sh
-          tar -czvf busybox-latest.tar.gz build
-
-      - name: Save package
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: busybox
-          path: build
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Create release
         id: create_release
@@ -45,18 +36,11 @@ jobs:
           release_name: Release ${{ steps.version.outputs.v-version }} ${{ github.ref }}
           body: |
             Release ${{ steps.version.outputs.v-version }} @${{ github.ref }}
+
+            Binaries are built and distributed by penguin-tools
+            (penguin-tools.tar.gz); this release carries no binary asset.
           draft: true
           prerelease: false
-
-      - name: Upload release asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./busybox-latest.tar.gz
-          asset_name: busybox-latest.tar.gz
-          asset_content_type: application/gzip
 
       - name: Publish release
         uses: StuYarrow/publish-release@v1.1.2
