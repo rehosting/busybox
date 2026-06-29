@@ -19,11 +19,34 @@ static inline unsigned long portal_call(unsigned long user_magic, int argc,
 }
 
 #ifdef MAGIC_VALUE
+#include <stdlib.h>  /* getenv */
 #define RETRY 0xDEADBEEF
+
+/*
+ * Shell-coverage hypercalls are emitted only for the firmware-under-analysis.
+ * Penguin exports IGLOO_NO_SHELL_COV=1 in its own infrastructure environment
+ * (boot machinery + the vpnguin/console/guesthopper helpers) and clears it at
+ * the handoff into the firmware init, so everything in the infra environment
+ * stays silent. The marker is inherited across fork/exec, so the whole infra
+ * subtree -- including fork-without-exec subshells -- is covered without any
+ * per-process tracking on the host. Absence of the marker means "report", so a
+ * plain busybox outside Penguin behaves exactly as before.
+ */
+static inline int igloo_shell_cov_suppressed(void)
+{
+    static int cached = -1;
+    if (cached < 0)
+        cached = getenv("IGLOO_NO_SHELL_COV") != NULL;
+    return cached;
+}
+
 static inline int portal_hc(int hc_type, void **s, int len)
 {
     uint64_t ret = hc_type;
     int y = 0;
+
+    if (igloo_shell_cov_suppressed())
+        return 0;
     do {
         ret = MAGIC_VALUE;
         volatile int x = 0;
