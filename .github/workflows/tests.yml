@@ -41,12 +41,24 @@ jobs:
           skipPush: ${{ github.event_name == 'pull_request' }}
 
       - name: Build busybox for all guest arches (this checkout)
+        env:
+          # install-nix-action's github_access_token isn't honored on this
+          # pre-installed-nix runner, so the GitHub flake fetcher went out
+          # anonymous and hit the 60/hr shared-IP limit (HTTP 429). Authenticate
+          # the fetcher directly via NIX_CONFIG (public repo, so any valid token
+          # lifts the limit to 5000/hr).
+          NIX_CONFIG: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eux
+          # Resolve penguin-tools once instead of re-resolving HEAD for all 11
+          # arches, then build each against that pinned rev.
+          rev=$(nix flake metadata github:rehosting/penguin-tools \
+                  --json --refresh | jq -r .revision)
           for a in x86_64 armel aarch64 mipsel mipseb mips64el mips64eb \
                    powerpc64 powerpc64le riscv64 loongarch64; do
             nix build --accept-flake-config \
-              "github:rehosting/penguin-tools#busybox-$a" \
+              "github:rehosting/penguin-tools/$rev#busybox-$a" \
               --override-input busybox "path:$PWD" \
               --no-link --print-out-paths -L
           done
