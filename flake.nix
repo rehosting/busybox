@@ -12,8 +12,9 @@
   # toolchains are byte-identical and shared through Cachix.
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/b6067cc0127d4db9c26c79e4de0513e58d0c40c9";
 
-  # libhc: the hypercall.h header the fork's instrumentation includes (normally
-  # a git submodule). Provided as a source input instead of initialising it.
+  # libhc: the hypercall.h header the fork's instrumentation includes,
+  # provided as a source input (mk-busybox.nix drops it into include/libhc/;
+  # historically an include/libhc git submodule, removed).
   inputs.libhc = {
     url = "github:panda-re/libhc/b2f2efbd948faca9e242ae410e035c0065ec433a";
     flake = false;
