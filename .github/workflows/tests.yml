@@ -3,8 +3,7 @@ name: Check that the code compiles
 # Build busybox for every guest arch through this repo's OWN flake
 # (`nix build .#dist` cross-builds all arches into the /igloo_static fragment
 # penguin consumes). Self-contained -- no longer borrows penguin-tools' machinery.
-# The flake supplies the libhc header from its own input, so the submodule is
-# not needed here.
+# The flake supplies the libhc header from its own input.
 
 on:
   pull_request:

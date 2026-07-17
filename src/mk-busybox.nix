@@ -2,9 +2,9 @@
 # the checked-in .config (CONFIG_STATIC=y) verbatim.
 #
 # The fork's instrumentation headers (include/hypercall_logging.h) pull in
-# include/portalcall.h -> include/libhc/hypercall.h, which is a git submodule
-# (panda-re/libhc). We provide it from the `libhc` source input rather than
-# initialising a submodule.
+# include/portalcall.h -> include/libhc/hypercall.h. That header comes from the
+# `libhc` source input (panda-re/libhc), dropped in below -- include/libhc is
+# not part of the source tree (it was once a git submodule, since removed).
 #
 #   crossPkgs -- a musl cross nixpkgs (archs.nix muslCrossSystem) for a fully
 #                static guest binary; its stdenv.cc.targetPrefix drives kbuild's
@@ -22,7 +22,7 @@ crossPkgs.stdenv.mkDerivation {
   dontConfigure = true;
 
   postPatch = ''
-    # Supply the libhc submodule the fork's headers include.
+    # Supply the libhc header the fork's includes expect.
     mkdir -p include/libhc
     cp ${libhc}/hypercall.h include/libhc/hypercall.h
   '';
